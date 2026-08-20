@@ -22,43 +22,38 @@ video{width:100%;border-radius:6px}
 const USER = "charlie20120923";
 const REPO = "some-singing-video";
 const BRANCH = "main";
-
+const PROXY_VIDEO = "https://gh-proxy.org/";
 const box = document.getElementById("box");
 
-async function loadVideos(){
+async function load(){
   try{
-    const res = await fetch(`https://api.github.com/repos/${USER}/${REPO}/contents/video?ref=${BRANCH}`);
+    // 读取同仓库生成的json，无跨域
+    const res = await fetch("./video-list.json");
     const list = await res.json();
-    if(!Array.isArray(list)){
-      box.innerHTML = "<div>video文件夹为空或者不存在！</div>";
+    if(!Array.isArray(list) || list.length===0){
+      box.innerText = "video文件夹没有mp4文件";
       return;
     }
     let html = "";
-    list.forEach(file=>{
-      if(file.name.toLowerCase().endsWith(".mp4")){
-        const rawUrl = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/video/${file.name}`;
-        const src = `https://gh-proxy.org/${rawUrl}`;
-        html += `
-        <div class="video-item">
-          <div class="name">${file.name}</div>
-          <video controls preload="metadata">
-            <source src="${src}" type="video/mp4">
-            浏览器不支持播放该视频
-          </video>
-        </div>
-        `;
-      }
+    list.forEach(filename=>{
+      const raw = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/video/${filename}`;
+      const src = PROXY_VIDEO + raw;
+      html += `
+      <div class="video-item">
+        <div class="name">${filename}</div>
+        <video controls preload="metadata">
+          <source src="${src}" type="video/mp4">
+          浏览器不支持播放该视频
+        </video>
+      </div>
+      `;
     })
-    if(html===""){
-      box.innerHTML = "<div>video文件夹没有找到mp4视频</div>";
-    }else{
-      box.innerHTML = html;
-    }
+    box.innerHTML = html;
   }catch(err){
-    box.innerHTML = `<div>加载失败：${err.message}</div>`;
+    box.innerText = "读取失败："+err.toString();
   }
 }
-loadVideos();
+load();
 </script>
 </body>
 </html>
