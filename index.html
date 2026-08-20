@@ -20,7 +20,7 @@ video{width:100%;border-radius:6px}
 
 <script>
 const USER = "charlie20120923";
-const REPO = "charlie20120923.github.io";
+const REPO = "some-singing-video";
 const BRANCH = "main";
 
 const box = document.getElementById("box");
@@ -37,7 +37,6 @@ async function loadVideos(){
     list.forEach(file=>{
       if(file.name.toLowerCase().endsWith(".mp4")){
         const rawUrl = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/video/${file.name}`;
-        // 使用 gh‑proxy.org 前缀
         const src = `https://gh-proxy.org/${rawUrl}`;
         html += `
         <div class="video-item">
@@ -63,4 +62,3 @@ loadVideos();
 </script>
 </body>
 </html>
-
