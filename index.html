@@ -3,20 +3,86 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>视频列表</title>
+<title>我的视频集</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#111;color:#fff;padding:16px;font-family:system-ui}
-h1{text-align:center;margin-bottom:24px}
-.video-item{margin-bottom:30px;background:#222;padding:12px;border-radius:8px}
-video{width:100%;border-radius:6px}
-.name{margin:8px 0;font-size:15px}
-.loading{text-align:center;padding:40px;color:#aaa}
+body{
+  background:#0f1117;
+  color:#f0f0f0;
+  padding:20px 16px;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  max-width:1200px;
+  margin:0 auto;
+}
+h1{
+  text-align:center;
+  margin-bottom:32px;
+  font-weight:600;
+  font-size:26px;
+  color:#ffffff;
+}
+.container{
+  display:grid;
+  grid-template-columns:repeat(auto‑fit,minmax(340px,1fr));
+  gap:24px;
+}
+.video-card{
+  background:#1a1d26;
+  border-radius:14px;
+  padding:14px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.35);
+  transition:transform 0.22s ease,box‑shadow 0.22s ease;
+}
+.video-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 8px 22px rgba(0,0,0,0.45);
+}
+video{
+  width:100%;
+  border-radius:8px;
+  background:#272b36;
+}
+.filename{
+  margin-top:12px;
+  font-size:14px;
+  color:#c5c8d1;
+  word‑break:break‑all;
+}
+.loading-wrap{
+  grid‑column:1/-1;
+  text‑align:center;
+  padding:60px 20px;
+  color:#9499a7;
+  font‑size:16px;
+}
+.spinner{
+  width:36px;
+  height:36px;
+  border:3px solid #2c313d;
+  border‑top‑color:#58a6ff;
+  border‑radius:50%;
+  animation:spin 0.8s linear infinite;
+  margin:0 auto 16px;
+}
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+.empty-tip{
+  grid‑column:1/-1;
+  text‑align:center;
+  padding:60px 20px;
+  color:#9499a7;
+}
 </style>
 </head>
 <body>
-<h1>仓库 video 文件夹视频</h1>
-<div id="box" class="loading">正在加载视频列表...</div>
+<h1>我的视频集</h1>
+<div class="container" id="box">
+  <div class="loading-wrap">
+    <div class="spinner"></div>
+    <div>读取视频列表中…</div>
+  </div>
+</div>
 
 <script>
 const USER = "charlie20120923";
@@ -27,11 +93,10 @@ const box = document.getElementById("box");
 
 async function load(){
   try{
-    // 读取同仓库生成的json，无跨域
     const res = await fetch("./video-list.json");
     const list = await res.json();
     if(!Array.isArray(list) || list.length===0){
-      box.innerText = "video文件夹没有mp4文件";
+      box.innerHTML = `<div class="empty-tip">video文件夹没有找到mp4视频</div>`;
       return;
     }
     let html = "";
@@ -39,22 +104,21 @@ async function load(){
       const raw = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/video/${filename}`;
       const src = PROXY_VIDEO + raw;
       html += `
-      <div class="video-item">
-        <div class="name">${filename}</div>
-        <video controls preload="metadata">
+      <div class="video-card">
+        <video controls preload="none">
           <source src="${src}" type="video/mp4">
-          浏览器不支持播放该视频
+          浏览器不支持该视频
         </video>
+        <div class="filename">${filename}</div>
       </div>
       `;
     })
     box.innerHTML = html;
   }catch(err){
-    box.innerText = "读取失败："+err.toString();
+    box.innerHTML = `<div class="empty-tip">读取失败：${err.toString()}</div>`;
   }
 }
 load();
 </script>
 </body>
 </html>
-  
