@@ -46,7 +46,7 @@ h1{
 }
 .container{
   display:grid;
-  grid-template-columns:repeat(auto‑fit,minmax(340px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
   gap:26px;
 }
 .video-card{
@@ -71,23 +71,23 @@ video{
   margin-top:14px;
   font-size:14px;
   color:#8bff90;
-  word‑break:break‑all;
+  word-break:break-all;
   text-shadow:0 0 6px #2cff3466;
 }
 .loading-wrap{
-  grid‑column:1/-1;
-  text‑align:center;
+  grid-column:1/-1;
+  text-align:center;
   padding:70px 20px;
   color:#54c95a;
-  font‑size:17px;
+  font-size:17px;
   text-shadow:0 0 6px #21ff2a;
 }
 .spinner{
   width:42px;
   height:42px;
   border:3px solid #13331a;
-  border‑top‑color:#39ff40;
-  border‑radius:50%;
+  border-top-color:#39ff40;
+  border-radius:50%;
   animation:spin 0.8s linear infinite;
   margin:0 auto 18px;
   box-shadow:0 0 12px #22ff2b;
@@ -96,9 +96,112 @@ video{
   to{transform:rotate(360deg)}
 }
 .empty-tip{
-  grid‑column:1/-1;
-  text‑align:center;
+  grid-column:1/-1;
+  text-align:center;
   padding:70px 20px;
+  color:#54c95a;
+  text-shadow:0 0 6px #21ff2a;
+  font-size:17px;
+}
+.stats-info{
+  text-align:center;
+  margin-bottom:20px;
+  color:#62dd68;
+  text-shadow:0 0 5px #24ff2d;
+}
+.download-btn{
+  display:inline-block;
+  margin-top:12px;
+  padding:7px 14px;
+  background:#142c1a;
+  border:1px solid #34ff3d;
+  color:#76ff7a;
+  border-radius:8px;
+  text-decoration:none;
+  font-size:13px;
+  text-shadow:0 0 4px #2bff33;
+  box-shadow:0 0 8px #20ff2940;
+  transition:0.2s;
+}
+.download-btn:hover{
+  background:#1b4424;
+  box-shadow:0 0 16px #29ff3380;
+}
+</style>
+</head>
+<body>
+<h1>炫酷视频集</h1>
+<div class="stats-info" id="stats">正在统计视频数量...</div>
+<div class="search-box">
+  <input id="search-input" placeholder="🔍输入关键词筛选视频文件名...">
+</div>
+<div class="container" id="box">
+  <div class="loading-wrap">
+    <div class="spinner"></div>
+    <div>读取视频列表中…</div>
+  </div>
+</div>
+
+<script>
+const USER = "charlie20120923";
+const REPO = "some-singing-video";
+const BRANCH = "main";
+const PROXY_VIDEO = "https://gh-proxy.org/";
+const box = document.getElementById("box");
+const statsEl = document.getElementById("stats");
+const searchInput = document.getElementById("search-input");
+let allVideoList = [];
+
+function render(list){
+  if(!Array.isArray(list) || list.length===0){
+    box.innerHTML = `<div class="empty-tip">video文件夹没有找到mp4视频</div>`;
+    statsEl.innerText = `共 0 个视频`;
+    return;
+  }
+  statsEl.innerText = `共 ${list.length} 个视频`;
+  let html = "";
+  list.forEach(filename=>{
+    const raw = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/video/${filename}`;
+    const src = PROXY_VIDEO + raw;
+    html += `
+    <div class="video-card" data-name="${filename.toLowerCase()}">
+      <video controls preload="none">
+        <source src="${src}" type="video/mp4">
+        浏览器不支持该视频
+      </video>
+      <div class="filename">${filename}</div>
+      <a class="download-btn" href="${src}" download="${filename}">⬇下载本视频</a>
+    </div>
+    `;
+  })
+  box.innerHTML = html;
+}
+
+async function load(){
+  try{
+    const res = await fetch("./video-list.json");
+    allVideoList = await res.json();
+    render(allVideoList);
+  }catch(err){
+    box.innerHTML = `<div class="empty-tip">读取失败：${err.toString()}</div>`;
+    statsEl.innerText = "获取视频信息失败";
+  }
+}
+
+searchInput.addEventListener("input",(e)=>{
+  const kw = e.target.value.trim().toLowerCase();
+  if(!kw){
+    render(allVideoList);
+    return;
+  }
+  const filter = allVideoList.filter(n=>n.toLowerCase().includes(kw));
+  render(filter);
+})
+
+load();
+</script>
+</body>
+</html>
   color:#54c95a;
   text-shadow:0 0 6px #21ff2a;
   font-size:17px;
