@@ -3,66 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>我的视频集</title>
+<title>炫酷视频集</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{
-  background:#0f1117;
-  color:#f0f0f0;
-  padding:20px 16px;
+  background:#05080b;
+  color:#e8ffe8;
+  padding:24px 16px;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  max-width:1200px;
+  max-width:1300px;
   margin:0 auto;
+  background-image:radial-gradient(circle at 50% 0%,#082214 0%,transparent 60%);
+  min-height:100vh;
 }
 h1{
   text-align:center;
-  margin-bottom:32px;
-  font-weight:600;
-  font-size:26px;
-  color:#ffffff;
+  margin-bottom:28px;
+  font-weight:700;
+  font-size:30px;
+  color:#76ff7a;
+  text-shadow: 0 0 8px #39ff40,0 0 16px #22ff2b,0 0 28px #10ff1c;
+  letter-spacing:2px;
+}
+.search-box{
+  max-width:600px;
+  margin:0 auto 32px;
+}
+#search-input{
+  width:100%;
+  background:#0e1a12;
+  border:1px solid #26ff30;
+  color:#76ff7a;
+  padding:12px 16px;
+  border-radius:10px;
+  font-size:16px;
+  outline:none;
+  text-shadow:0 0 4px #2eff36;
+  box-shadow:0 0 10px #1bff2444;
+}
+#search-input::placeholder{
+  color:#429947;
 }
 .container{
   display:grid;
   grid-template-columns:repeat(auto‑fit,minmax(340px,1fr));
-  gap:24px;
+  gap:26px;
 }
 .video-card{
-  background:#1a1d26;
-  border-radius:14px;
-  padding:14px;
-  box-shadow:0 4px 14px rgba(0,0,0,0.35);
-  transition:transform 0.22s ease,box‑shadow 0.22s ease;
+  background:#0c140f;
+  border:1px solid #20ff2a44;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 0 12px #1aff2333,0 4px 14px rgba(0,0,0,0.6);
+  transition:transform 0.25s ease,box-shadow 0.25s ease;
 }
 .video-card:hover{
-  transform:translateY(-4px);
-  box-shadow:0 8px 22px rgba(0,0,0,0.45);
+  transform:translateY(-6px);
+  box-shadow:0 0 22px #22ff2c70,0 8px 24px rgba(0,0,0,0.75);
+  border-color:#3bff44;
 }
 video{
   width:100%;
-  border-radius:8px;
-  background:#272b36;
+  border-radius:10px;
+  background:#0a110d;
 }
 .filename{
-  margin-top:12px;
+  margin-top:14px;
   font-size:14px;
-  color:#c5c8d1;
+  color:#8bff90;
   word‑break:break‑all;
+  text-shadow:0 0 6px #2cff3466;
 }
 .loading-wrap{
   grid‑column:1/-1;
   text‑align:center;
-  padding:60px 20px;
-  color:#9499a7;
-  font‑size:16px;
+  padding:70px 20px;
+  color:#54c95a;
+  font‑size:17px;
+  text-shadow:0 0 6px #21ff2a;
 }
 .spinner{
-  width:36px;
-  height:36px;
-  border:3px solid #2c313d;
-  border‑top‑color:#58a6ff;
+  width:42px;
+  height:42px;
+  border:3px solid #13331a;
+  border‑top‑color:#39ff40;
   border‑radius:50%;
   animation:spin 0.8s linear infinite;
-  margin:0 auto 16px;
+  margin:0 auto 18px;
+  box-shadow:0 0 12px #22ff2b;
 }
 @keyframes spin{
   to{transform:rotate(360deg)}
@@ -70,13 +98,43 @@ video{
 .empty-tip{
   grid‑column:1/-1;
   text‑align:center;
-  padding:60px 20px;
-  color:#9499a7;
+  padding:70px 20px;
+  color:#54c95a;
+  text-shadow:0 0 6px #21ff2a;
+  font-size:17px;
+}
+.stats-info{
+  text-align:center;
+  margin-bottom:20px;
+  color:#62dd68;
+  text-shadow:0 0 5px #24ff2d;
+}
+.download-btn{
+  display:inline-block;
+  margin-top:12px;
+  padding:7px 14px;
+  background:#142c1a;
+  border:1px solid #34ff3d;
+  color:#76ff7a;
+  border-radius:8px;
+  text-decoration:none;
+  font-size:13px;
+  text-shadow:0 0 4px #2bff33;
+  box-shadow:0 0 8px #20ff2940;
+  transition:0.2s;
+}
+.download-btn:hover{
+  background:#1b4424;
+  box-shadow:0 0 16px #29ff3380;
 }
 </style>
 </head>
 <body>
-<h1>我的视频集</h1>
+<h1>炫酷视频集</h1>
+<div class="stats-info" id="stats">正在统计视频数量...</div>
+<div class="search-box">
+  <input id="search-input" placeholder="🔍输入关键词筛选视频文件名...">
+</div>
 <div class="container" id="box">
   <div class="loading-wrap">
     <div class="spinner"></div>
@@ -90,15 +148,60 @@ const REPO = "some-singing-video";
 const BRANCH = "main";
 const PROXY_VIDEO = "https://gh-proxy.org/";
 const box = document.getElementById("box");
+const statsEl = document.getElementById("stats");
+const searchInput = document.getElementById("search-input");
+let allVideoList = [];
+
+function render(list){
+  if(!Array.isArray(list) || list.length===0){
+    box.innerHTML = `<div class="empty-tip">video文件夹没有找到mp4视频</div>`;
+    statsEl.innerText = `共 0 个视频`;
+    return;
+  }
+  statsEl.innerText = `共 ${list.length} 个视频`;
+  let html = "";
+  list.forEach(filename=>{
+    const raw = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/video/${filename}`;
+    const src = PROXY_VIDEO + raw;
+    html += `
+    <div class="video-card" data-name="${filename.toLowerCase()}">
+      <video controls preload="none">
+        <source src="${src}" type="video/mp4">
+        浏览器不支持该视频
+      </video>
+      <div class="filename">${filename}</div>
+      <a class="download-btn" href="${src}" download="${filename}">⬇下载本视频</a>
+    </div>
+    `;
+  })
+  box.innerHTML = html;
+}
 
 async function load(){
   try{
     const res = await fetch("./video-list.json");
-    const list = await res.json();
-    if(!Array.isArray(list) || list.length===0){
-      box.innerHTML = `<div class="empty-tip">video文件夹没有找到mp4视频</div>`;
-      return;
-    }
+    allVideoList = await res.json();
+    render(allVideoList);
+  }catch(err){
+    box.innerHTML = `<div class="empty-tip">读取失败：${err.toString()}</div>`;
+    statsEl.innerText = "获取视频信息失败";
+  }
+}
+
+searchInput.addEventListener("input",(e)=>{
+  const kw = e.target.value.trim().toLowerCase();
+  if(!kw){
+    render(allVideoList);
+    return;
+  }
+  const filter = allVideoList.filter(n=>n.toLowerCase().includes(kw));
+  render(filter);
+})
+
+load();
+</script>
+</body>
+</html>
     let html = "";
     list.forEach(filename=>{
       const raw = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/video/${filename}`;
