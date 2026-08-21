@@ -214,7 +214,23 @@ async function load(){
   try{
     const listUrl = `${CDN_BASE}/video-list.json`;
     const res = await fetch(listUrl);
-    allVideoList = await res.json();
+    const data = await res.json();
+    
+    // 兼容两种格式
+    if (Array.isArray(data) && data.length > 0) {
+      if (typeof data[0] === 'string') {
+        // 旧格式：["video1.mp4", "video2.mp4"]
+        allVideoList = data.map(filename => ({ filename, size: 0 }));
+      } else if (typeof data[0] === 'object' && data[0].filename) {
+        // 新格式：[{"filename":"video1.mp4","size":12345}]
+        allVideoList = data;
+      } else {
+        allVideoList = [];
+      }
+    } else {
+      allVideoList = [];
+    }
+    
     render(allVideoList);
   }catch(err){
     box.innerHTML = `<div class="empty-tip">读取失败：${err.toString()}</div>`;
