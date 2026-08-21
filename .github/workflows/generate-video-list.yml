@@ -1,7 +1,9 @@
 name: Generate video list
+
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   build:
@@ -9,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Scan video folder
+      - name: Scan video folder with size
         run: |
           JSON_OUT="video-list.json"
           echo "[" > $JSON_OUT
@@ -17,12 +19,15 @@ jobs:
           for f in video/*.mp4; do
             if [ -f "$f" ]; then
               name=$(basename "$f")
+              # 获取文件大小（字节）
+              size=$(stat -c%s "$f")
               if [ $first -eq 1 ]; then
                 first=0
               else
                 echo "," >> $JSON_OUT
               fi
-              echo "  \"$name\"" >> $JSON_OUT
+              # 输出 JSON 对象
+              echo "  {\"filename\": \"$name\", \"size\": $size}" >> $JSON_OUT
             fi
           done
           echo "]" >> $JSON_OUT
@@ -30,10 +35,8 @@ jobs:
 
       - name: Commit json file
         run: |
-          git config user.name "github‑actions[bot]"
-          git config user.email "github‑actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add video-list.json
-          git commit -m "auto update video‑list.json" || true
-          git pull origin main
+          git commit -m "auto update video-list.json" || true
           git push origin main
-
