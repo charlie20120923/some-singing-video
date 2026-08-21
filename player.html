@@ -55,11 +55,6 @@ body{
   text-shadow:0 0 6px #1a6aff66;
   word-break:break-all;
 }
-.video-info .filesize{
-  font-size:14px;
-  color:#4a7aaa;
-  margin-top:4px;
-}
 .toolbar-actions{
   display:flex;
   flex-wrap:wrap;
@@ -165,18 +160,6 @@ const CDN_BASE = `https://cdn.jsdelivr.net/gh/${USER}/${REPO}@${BRANCH}`;
 const container = document.getElementById("player-container");
 const toast = document.getElementById("toast");
 
-function formatSize(bytes){
-  if (!bytes || bytes === 0) return "大小未知";
-  const units = ["B", "KB", "MB", "GB"];
-  let i = 0;
-  let size = bytes;
-  while (size >= 1024 && i < units.length - 1) {
-    size /= 1024;
-    i++;
-  }
-  return size.toFixed(1) + " " + units[i];
-}
-
 function showToast(msg){
   toast.textContent = msg;
   toast.classList.add("show");
@@ -212,30 +195,6 @@ async function load(){
   }
 
   try{
-    const listUrl = `${CDN_BASE}/video-list.json`;
-    const res = await fetch(listUrl);
-    let list = await res.json();
-    
-    // 兼容两种格式，查找匹配的文件
-    let item = null;
-    let fileSize = 0;
-    
-    if (Array.isArray(list)) {
-      for (let f of list) {
-        let name;
-        if (typeof f === 'string') {
-          name = f;
-        } else {
-          name = f.filename;
-        }
-        if (name === filename) {
-          item = f;
-          fileSize = typeof f === 'string' ? 0 : (f.size || 0);
-          break;
-        }
-      }
-    }
-    
     const videoUrl = `${CDN_BASE}/video/${filename}`;
     const pageUrl = window.location.href;
 
@@ -247,7 +206,6 @@ async function load(){
       </video>
       <div class="video-info">
         <div class="filename">${filename}</div>
-        <div class="filesize">${formatSize(fileSize)}</div>
       </div>
       <div class="toolbar-actions">
         <button class="btn" onclick="copyText('${videoUrl}')">📋 复制下载链接</button>
