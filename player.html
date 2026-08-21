@@ -215,7 +215,14 @@ async function load(){
     // 获取视频列表获取文件大小
     const listUrl = `${CDN_BASE}/video-list.json`;
     const res = await fetch(listUrl);
-    const list = await res.json();
+    let list = await res.json();
+
+    // 兼容两种格式
+    if (Array.isArray(list) && list.length > 0 && typeof list[0] === 'string') {
+      // 旧格式转新格式
+      list = list.map(f => ({ filename: f, size: 0 }));
+    }
+
     const item = list.find(f => f.filename === filename);
     
     const videoUrl = `${CDN_BASE}/video/${filename}`;
