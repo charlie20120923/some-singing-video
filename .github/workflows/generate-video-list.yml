@@ -1,4 +1,4 @@
-name: Generate video list
+name: Generate video list and thumbnails
 
 on:
   push:
@@ -9,32 +9,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4          # ✅ 第一步：拉取代码
 
-      - name: Scan video folder with size
+      - name: Setup ffmpeg                 # ✅ 第二步：安装 ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+
+      - name: Scan and generate           # ✅ 第三步：用 ffmpeg 生成缩略图
         run: |
+          mkdir -p thumbnails
           JSON_OUT="video-list.json"
           echo "[" > $JSON_OUT
           first=1
           for f in video/*.mp4; do
             if [ -f "$f" ]; then
               name=$(basename "$f")
-              size=$(stat -c%s "$f")
-              if [ $first -eq 1 ]; then
-                first=0
-              else
-                echo "," >> $JSON_OUT
-              fi
-              echo "  {\"filename\": \"$name\", \"size\": $size}" >> $JSON_OUT
+              if [ $first -eq 1 ]; then first=0; else echo "," >> $JSON_OUT; fi
+              echo "  \"$name\"" >> $JSON_OUT
+              # 用 ffmpeg 生成缩略图
+              base=$(basename "$f" .mp4)
+              ffmpeg -ss 10 -i "$f" -frames:v 1 -q:v 2 "thumbnails/$base.jpg" -y
             fi
           done
           echo "]" >> $JSON_OUT
-          cat $JSON_OUT
 
-      - name: Commit json file
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add video-list.json
-          git commit -m "auto update video-list.json" || echo "nothing to commit"
-          git push origin main || echo "nothing to push"
+          git add video-list.json thumbnails/
+          git commit -m "auto update" || echo "nothing to commit"
+          git push origin main
