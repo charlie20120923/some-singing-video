@@ -174,18 +174,19 @@ const searchInput = document.getElementById("search-input");
 let allVideoList = [];
 
 function formatSize(bytes){
-  if(!bytes) return "未知";
-  const units = ["B","KB","MB","GB"];
+  if (!bytes || bytes === 0) return "大小未知";
+  const units = ["B", "KB", "MB", "GB"];
   let i = 0;
-  while(bytes >= 1024 && i < units.length-1){
-    bytes /= 1024;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024;
     i++;
   }
-  return bytes.toFixed(1) + " " + units[i];
+  return size.toFixed(1) + " " + units[i];
 }
 
 function render(list){
-  if(!Array.isArray(list) || list.length===0){
+  if (!Array.isArray(list) || list.length === 0) {
     box.innerHTML = `<div class="empty-tip">未找到视频</div>`;
     statsEl.innerText = "共 0 个视频";
     return;
@@ -193,9 +194,8 @@ function render(list){
   statsEl.innerText = `共 ${list.length} 个视频`;
 
   let html = "";
-  list.forEach(item=>{
+  list.forEach(item => {
     const src = `${CDN_BASE}/video/${item.filename}`;
-    // 缩略图：尝试用视频第一帧（部分浏览器支持）
     const thumb = `${CDN_BASE}/thumbnails/${item.filename.replace(/\.[^.]+$/, '.jpg')}`;
     html += `
     <a class="video-card" href="player.html?id=${encodeURIComponent(item.filename)}">
@@ -211,36 +211,28 @@ function render(list){
 }
 
 async function load(){
-  try{
+  try {
     const listUrl = `${CDN_BASE}/video-list.json`;
     const res = await fetch(listUrl);
     const data = await res.json();
     
-    // 兼容两种格式
-    if (Array.isArray(data) && data.length > 0) {
-      if (typeof data[0] === 'string') {
-        // 旧格式：["video1.mp4", "video2.mp4"]
-        allVideoList = data.map(filename => ({ filename, size: 0 }));
-      } else if (typeof data[0] === 'object' && data[0].filename) {
-        // 新格式：[{"filename":"video1.mp4","size":12345}]
-        allVideoList = data;
-      } else {
-        allVideoList = [];
-      }
+    // 直接使用新格式
+    if (Array.isArray(data) && data.length > 0 && data[0].filename) {
+      allVideoList = data;
     } else {
       allVideoList = [];
     }
     
     render(allVideoList);
-  }catch(err){
+  } catch (err) {
     box.innerHTML = `<div class="empty-tip">读取失败：${err.toString()}</div>`;
     statsEl.innerText = "获取视频信息失败";
   }
 }
 
-searchInput.addEventListener("input",(e)=>{
+searchInput.addEventListener("input", (e) => {
   const kw = e.target.value.trim().toLowerCase();
-  const data = kw ? allVideoList.filter(item=>item.filename.toLowerCase().includes(kw)) : allVideoList;
+  const data = kw ? allVideoList.filter(item => item.filename.toLowerCase().includes(kw)) : allVideoList;
   render(data);
 });
 
