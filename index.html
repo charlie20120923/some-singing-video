@@ -24,26 +24,35 @@ body{
 }
 .page-title{
   text-align:center;
-  margin-bottom:28px;
+  margin-bottom:20px;
   font-weight:400;
   font-size:26px;
   color:#76ff7a;
   text-shadow: 0 0 8px #39ff40,0 0 16px #22ff2b;
   letter-spacing:1px;
 }
+.toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  max-width:700px;
+  margin:0 auto 24px;
+}
 .search-box{
-  max-width:600px;
-  margin:0 auto 32px;
+  flex:1;
+  min-width:200px;
 }
 #search-input{
   width:100%;
   background:#0e1a12;
   border:1px solid #26ff30;
   color:#76ff7a;
-  padding:12px 16px;
+  padding:10px 16px;
   border-radius:10px;
   font-family: 'MapleMono‑CN', monospace;
-  font-size:16px;
+  font-size:15px;
   outline:none;
   text-shadow:0 0 4px #2eff36;
   box-shadow:0 0 10px #1bff2444;
@@ -51,9 +60,47 @@ body{
 #search-input::placeholder{
   color:#429947;
 }
+.view-toggle{
+  display:flex;
+  gap:4px;
+  background:#0c140f;
+  border:1px solid #20ff2a44;
+  border-radius:10px;
+  padding:4px;
+  flex-shrink:0;
+}
+.view-toggle button{
+  background:transparent;
+  border:none;
+  color:#62dd68;
+  padding:8px 18px;
+  border-radius:7px;
+  font-family: 'MapleMono‑CN', monospace;
+  font-size:14px;
+  cursor:pointer;
+  transition:0.2s;
+  text-shadow:0 0 4px #24ff2d44;
+}
+.view-toggle button.active{
+  background:#1b4424;
+  box-shadow:0 0 14px #29ff3366;
+  border:1px solid #34ff3d;
+  color:#a6ffaa;
+}
+.view-toggle button:hover:not(.active){
+  background:#142c1a;
+}
+.stats-info{
+  text-align:center;
+  margin-bottom:16px;
+  color:#62dd68;
+  text-shadow:0 0 5px #24ff2d;
+  font-size:15px;
+}
+/* ====== 网格模式 ====== */
 .container{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
   gap:26px;
 }
 .video-card{
@@ -69,17 +116,64 @@ body{
   box-shadow:0 0 22px #22ff2c70,0 8px 24px rgba(0,0,0,0.75);
   border-color:#3bff44;
 }
-video{
+.video-card video{
   width:100%;
   border-radius:10px;
   background:#0a110d;
 }
-.filename{
+.video-card .filename{
   margin-top:14px;
   font-size:14px;
   color:#8bff90;
   word-break:break-all;
   text-shadow:0 0 6px #2cff3466;
+}
+.video-card .download-btn{
+  display:inline-block;
+  margin-top:12px;
+  padding:7px 14px;
+  background:#142c1a;
+  border:1px solid #34ff3d;
+  color:#76ff7a;
+  border-radius:8px;
+  text-decoration:none;
+  font-family: 'MapleMono‑CN', monospace;
+  font-size:13px;
+  text-shadow:0 0 4px #2bff33;
+  box-shadow:0 0 8px #20ff2940;
+  transition:0.2s;
+}
+.video-card .download-btn:hover{
+  background:#1b4424;
+  box-shadow:0 0 16px #29ff3380;
+}
+/* ====== 列表模式 ====== */
+.container.list-mode{
+  display:block;
+}
+.container.list-mode .video-card{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px 20px;
+  padding:12px 18px;
+  margin-bottom:10px;
+  border-radius:10px;
+}
+.container.list-mode .video-card video{
+  width:180px;
+  flex-shrink:0;
+  border-radius:6px;
+}
+.container.list-mode .video-card .filename{
+  margin:0;
+  flex:1;
+  min-width:120px;
+  font-size:14px;
+}
+.container.list-mode .video-card .download-btn{
+  margin:0;
+  flex-shrink:0;
 }
 .loading-wrap{
   grid-column:1/-1;
@@ -110,45 +204,34 @@ video{
   text-shadow:0 0 6px #21ff2a;
   font-size:17px;
 }
-.stats-info{
-  text-align:center;
-  margin-bottom:20px;
-  color:#62dd68;
-  text-shadow:0 0 5px #24ff2d;
-}
-.download-btn{
-  display:inline-block;
-  margin-top:12px;
-  padding:7px 14px;
-  background:#142c1a;
-  border:1px solid #34ff3d;
-  color:#76ff7a;
-  border-radius:8px;
-  text-decoration:none;
-  font-family: 'MapleMono‑CN', monospace;
-  font-size:13px;
-  text-shadow:0 0 4px #2bff33;
-  box-shadow:0 0 8px #20ff2940;
-  transition:0.2s;
-}
-.download-btn:hover{
-  background:#1b4424;
-  box-shadow:0 0 16px #29ff3380;
+/* 列表模式下空状态也占满 */
+.container.list-mode .empty-tip{
+  display:block;
 }
 </style>
 </head>
 <body>
-<div class="page-title">视频播放器</div>
-<div class="stats-info" id="stats">正在统计视频数量...</div>
-<div class="search-box">
-  <input id="search-input" placeholder="输入关键词筛选视频文件名...">
+<div class="page-title">📹 视频播放器</div>
+
+<div class="toolbar">
+  <div class="search-box">
+    <input id="search-input" placeholder="🔍 搜索文件名...">
+  </div>
+  <div class="view-toggle">
+    <button class="active" data-view="grid">网格</button>
+    <button data-view="list">列表</button>
+  </div>
 </div>
+
+<div class="stats-info" id="stats">正在统计视频数量...</div>
+
 <div class="container" id="box">
   <div class="loading-wrap">
     <div class="spinner"></div>
     <div>读取视频列表中…</div>
   </div>
 </div>
+
 <script>
 const USER = "charlie20120923";
 const REPO = "some-singing-video";
@@ -158,14 +241,38 @@ const box = document.getElementById("box");
 const statsEl = document.getElementById("stats");
 const searchInput = document.getElementById("search-input");
 let allVideoList = [];
+let currentView = "grid";
+
+// 切换视图
+document.querySelectorAll(".view-toggle button").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".view-toggle button").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    currentView = this.dataset.view;
+    // 重新渲染当前列表
+    const keyword = searchInput.value.trim().toLowerCase();
+    const data = keyword ? allVideoList.filter(n=>n.toLowerCase().includes(keyword)) : allVideoList;
+    render(data);
+  });
+});
 
 function render(list){
   if(!Array.isArray(list) || list.length===0){
-    box.innerHTML = `<div class="empty-tip">未找到视频</div>`;
+    box.innerHTML = `<div class="empty-tip">🎬 未找到视频</div>`;
+    if(currentView === "list") box.classList.add("list-mode");
+    else box.classList.remove("list-mode");
     statsEl.innerText = `共 0 个视频`;
     return;
   }
   statsEl.innerText = `共 ${list.length} 个视频`;
+  
+  // 切换容器 class
+  if(currentView === "list") {
+    box.classList.add("list-mode");
+  } else {
+    box.classList.remove("list-mode");
+  }
+
   let html = "";
   list.forEach(filename=>{
     const raw = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/video/${filename}`;
@@ -177,10 +284,10 @@ function render(list){
         浏览器不支持该视频
       </video>
       <div class="filename">${filename}</div>
-      <a class="download-btn" href="${src}" download="${filename}">下载视频</a>
+      <a class="download-btn" href="${src}" download="${filename}">⬇ 下载</a>
     </div>
     `;
-  })
+  });
   box.innerHTML = html;
 }
 
@@ -190,20 +297,16 @@ async function load(){
     allVideoList = await res.json();
     render(allVideoList);
   }catch(err){
-    box.innerHTML = `<div class="empty-tip">读取失败：${err.toString()}</div>`;
+    box.innerHTML = `<div class="empty-tip">❌ 读取失败：${err.toString()}</div>`;
     statsEl.innerText = "获取视频信息失败";
   }
 }
 
 searchInput.addEventListener("input",(e)=>{
   const kw = e.target.value.trim().toLowerCase();
-  if(!kw){
-    render(allVideoList);
-    return;
-  }
-  const filter = allVideoList.filter(n=>n.toLowerCase().includes(kw));
-  render(filter);
-})
+  const data = kw ? allVideoList.filter(n=>n.toLowerCase().includes(kw)) : allVideoList;
+  render(data);
+});
 
 load();
 </script>
