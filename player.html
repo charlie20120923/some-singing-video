@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>播放视频</title>
+<style>
+@font-face {
+  font-family: 'MapleMono‑CN';
+  src: url('https://cdn.jsdelivr.net/gh/charlie20120923/some-singing-video/MapleMono-CN-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#0a0e1a;
+  color:#b0d4ff;
+  padding:24px 16px;
+  font-family: 'MapleMono‑CN', system-ui, monospace;
+  max-width:1000px;
+  margin:0 auto;
+  background-image:radial-gradient(circle at 50% 0%,#0a1a3a 0%,transparent 60%);
+  min-height:100vh;
+}
+.back-link{
+  display:inline-block;
+  color:#4a9eff;
+  text-decoration:none;
+  margin-bottom:20px;
+  text-shadow:0 0 8px #1a7aff;
+  font-size:16px;
+}
+.back-link:hover{
+  color:#7ab8ff;
+}
+.video-wrapper{
+  background:#0e1525;
+  border:1px solid #2a7aff44;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 0 20px #1a6aff33;
+}
+.video-wrapper video{
+  width:100%;
+  border-radius:10px;
+  background:#0a0f1a;
+  display:block;
+}
+.video-info{
+  margin-top:16px;
+}
+.video-info .filename{
+  font-size:18px;
+  color:#7ab8ff;
+  text-shadow:0 0 6px #1a6aff66;
+  word-break:break-all;
+}
+.video-info .filesize{
+  font-size:14px;
+  color:#4a7aaa;
+  margin-top:4px;
+}
+.toolbar-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:16px;
+}
+.btn{
+  padding:8px 18px;
+  background:#142244;
+  border:1px solid #3a8aff;
+  color:#7ab8ff;
+  border-radius:8px;
+  font-family: 'MapleMono‑CN', monospace;
+  font-size:13px;
+  cursor:pointer;
+  transition:0.2s;
+  text-shadow:0 0 4px #1a6aff;
+  box-shadow:0 0 8px #1a6aff40;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.btn:hover{
+  background:#1a2a5a;
+  box-shadow:0 0 16px #2a7aff80;
+}
+.btn-success{
+  border-color:#4aff6a;
+  color:#7aff9a;
+  text-shadow:0 0 4px #1aff3a;
+  box-shadow:0 0 8px #1aff3a40;
+}
+.btn-success:hover{
+  background:#1a3a2a;
+  box-shadow:0 0 16px #4aff6a80;
+}
+.toast{
+  position:fixed;
+  bottom:30px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#1a2a5a;
+  border:1px solid #3a8aff;
+  color:#b0d4ff;
+  padding:12px 24px;
+  border-radius:10px;
+  font-size:14px;
+  box-shadow:0 0 20px #1a6aff66;
+  opacity:0;
+  transition:opacity 0.3s;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{
+  opacity:1;
+}
+.loading-wrap{
+  text-align:center;
+  padding:70px 20px;
+  color:#5a9eff;
+}
+.spinner{
+  width:42px;
+  height:42px;
+  border:3px solid #1a2a5a;
+  border-top-color:#3a8aff;
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  margin:0 auto 18px;
+  box-shadow:0 0 12px #1a6aff;
+}
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+.error-msg{
+  text-align:center;
+  padding:70px 20px;
+  color:#ff6a6a;
+  text-shadow:0 0 8px #ff3a3a;
+}
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← 返回列表</a>
+
+<div id="player-container">
+  <div class="loading-wrap">
+    <div class="spinner"></div>
+    <div>加载视频信息…</div>
+  </div>
+</div>
+
+<div id="toast" class="toast">已复制</div>
+
+<script>
+const USER = "charlie20120923";
+const REPO = "some-singing-video";
+const BRANCH = "main";
+const CDN_BASE = `https://cdn.jsdelivr.net/gh/${USER}/${REPO}@${BRANCH}`;
+
+const container = document.getElementById("player-container");
+const toast = document.getElementById("toast");
+
+function formatSize(bytes){
+  if(!bytes) return "未知";
+  const units = ["B","KB","MB","GB"];
+  let i = 0;
+  while(bytes >= 1024 && i < units.length-1){
+    bytes /= 1024;
+    i++;
+  }
+  return bytes.toFixed(1) + " " + units[i];
+}
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(()=>toast.classList.remove("show"), 2000);
+}
+
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast("已复制到剪贴板");
+  }catch{
+    // 降级方案
+    const input = document.createElement("input");
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    document.body.removeChild(input);
+    showToast("已复制到剪贴板");
+  }
+}
+
+function getParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+async function load(){
+  const filename = getParam("id");
+  if(!filename){
+    container.innerHTML = `<div class="error-msg">❌ 未指定视频</div>`;
+    return;
+  }
+
+  try{
+    // 获取视频列表获取文件大小
+    const listUrl = `${CDN_BASE}/video-list.json`;
+    const res = await fetch(listUrl);
+    const list = await res.json();
+    const item = list.find(f => f.filename === filename);
+    
+    const videoUrl = `${CDN_BASE}/video/${filename}`;
+    const pageUrl = window.location.href;
+
+    container.innerHTML = `
+    <div class="video-wrapper">
+      <video controls autoplay playsinline>
+        <source src="${videoUrl}" type="video/mp4">
+        浏览器不支持该视频
+      </video>
+      <div class="video-info">
+        <div class="filename">${filename}</div>
+        <div class="filesize">${item ? formatSize(item.size) : "大小未知"}</div>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn" onclick="copyText('${videoUrl}')">📋 复制下载链接</button>
+        <button class="btn" onclick="copyText('${pageUrl}')">🔗 复制播放页链接</button>
+        <a class="btn btn-success" href="${videoUrl}" download="${filename}">⬇ 下载视频</a>
+      </div>
+    </div>
+    `;
+  }catch(err){
+    container.innerHTML = `<div class="error-msg">❌ 加载失败：${err.toString()}</div>`;
+  }
+}
+
+// 暴露到全局供 onclick 调用
+window.copyText = copyText;
+
+load();
+</script>
+</body>
+</html>
