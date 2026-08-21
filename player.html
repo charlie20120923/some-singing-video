@@ -166,14 +166,15 @@ const container = document.getElementById("player-container");
 const toast = document.getElementById("toast");
 
 function formatSize(bytes){
-  if(!bytes) return "未知";
-  const units = ["B","KB","MB","GB"];
+  if (!bytes || bytes === 0) return "大小未知";
+  const units = ["B", "KB", "MB", "GB"];
   let i = 0;
-  while(bytes >= 1024 && i < units.length-1){
-    bytes /= 1024;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024;
     i++;
   }
-  return bytes.toFixed(1) + " " + units[i];
+  return size.toFixed(1) + " " + units[i];
 }
 
 function showToast(msg){
@@ -188,7 +189,6 @@ async function copyText(text){
     await navigator.clipboard.writeText(text);
     showToast("已复制到剪贴板");
   }catch{
-    // 降级方案
     const input = document.createElement("input");
     input.value = text;
     document.body.appendChild(input);
@@ -212,18 +212,29 @@ async function load(){
   }
 
   try{
-    // 获取视频列表获取文件大小
     const listUrl = `${CDN_BASE}/video-list.json`;
     const res = await fetch(listUrl);
     let list = await res.json();
-
-    // 兼容两种格式
-    if (Array.isArray(list) && list.length > 0 && typeof list[0] === 'string') {
-      // 旧格式转新格式
-      list = list.map(f => ({ filename: f, size: 0 }));
+    
+    // 兼容两种格式，查找匹配的文件
+    let item = null;
+    let fileSize = 0;
+    
+    if (Array.isArray(list)) {
+      for (let f of list) {
+        let name;
+        if (typeof f === 'string') {
+          name = f;
+        } else {
+          name = f.filename;
+        }
+        if (name === filename) {
+          item = f;
+          fileSize = typeof f === 'string' ? 0 : (f.size || 0);
+          break;
+        }
+      }
     }
-
-    const item = list.find(f => f.filename === filename);
     
     const videoUrl = `${CDN_BASE}/video/${filename}`;
     const pageUrl = window.location.href;
@@ -236,7 +247,7 @@ async function load(){
       </video>
       <div class="video-info">
         <div class="filename">${filename}</div>
-        <div class="filesize">${item ? formatSize(item.size) : "大小未知"}</div>
+        <div class="filesize">${formatSize(fileSize)}</div>
       </div>
       <div class="toolbar-actions">
         <button class="btn" onclick="copyText('${videoUrl}')">📋 复制下载链接</button>
@@ -250,9 +261,7 @@ async function load(){
   }
 }
 
-// 暴露到全局供 onclick 调用
 window.copyText = copyText;
-
 load();
 </script>
 </body>
